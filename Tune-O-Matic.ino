@@ -54,7 +54,7 @@ int LEDG = 6;
 
 
 // clipping indicator variables
-boolean clipping = 0;
+boolean clipping = true;
 
 // data storage variables
 byte newData = 0;
@@ -64,16 +64,20 @@ byte prevData = 0;
 unsigned int period;
 int frequency;
 
+#define HALF_SAMPLE_VALUE 127
+
 // data storage variables
 unsigned int time = 0; // keeps time and sends vales to store in timer[] occasionally
-int timer[10]; // sstorage for timing of events
-int slope[10]; // storage for slope of events
+#define BUFFER_SIZE 10
+int timer[BUFFER_SIZE]; // storage for timing of events
+int slope[BUFFER_SIZE]; // storage for slope of events
 unsigned int totalTimer; // used to calculate period
 byte index = 0; // current storage index
 int maxSlope = 0; // used to calculate max slope as trigger point
 int newSlope; // storage for incoming slope data
 
 // variables for decided whether you have a match
+#define MAX_NO_MATCH_VALUE 9
 byte noMatch = 0; // counts how many non-matches you've received to reset variables if it's been too long
 byte slopeTol = 3; // slope tolerance- adjust this if you need
 int timerTol = 10; // timer tolerance- adjust this if you need
@@ -126,7 +130,7 @@ ISR(ADC_vect) { // when new ADC value ready
   PORTB &= B11101111; // set pin 12 low
   prevData = newData; // store previous value
   newData = ADCH; // get value from A0
-  if (prevData < 127 && newData >= 127){ // if increasing and crossing midpoint
+  if (prevData < HALF_SAMPLE_VALUE && newData >= HALF_SAMPLE_VALUE){ // if increasing and crossing midpoint
     newSlope = newData - prevData; // calculate slope
     if (abs(newSlope - maxSlope) < slopeTol){//if slopes are ==
       //record new data and reset time
@@ -154,7 +158,7 @@ ISR(ADC_vect) { // when new ADC value ready
       }
       else{ // crossing midpoint but not match
         index++; // increment index
-        if (index > 9){
+        if (index > BUFFER_SIZE - 1){
           reset();
         }
       }
@@ -167,7 +171,7 @@ ISR(ADC_vect) { // when new ADC value ready
     }
     else{ // slope not steep enough
       noMatch++; // increment no match counter
-      if (noMatch > 9){
+      if (noMatch > MAX_NO_MATCH_VALUE){
         reset();
       }
     }
@@ -175,14 +179,14 @@ ISR(ADC_vect) { // when new ADC value ready
     
   if (newData == 0 || newData == 1023){ // if clipping
     PORTB |= B00100000; // set pin 13 high- turn on clipping indicator led
-    clipping = 1; // currently clipping
+    clipping = true; // currently clipping
   }
   
   time++; // increment timer at rate of 38.5kHz
   
   ampTimer++; // increment amplitude timer
-  if (abs(127 - ADCH) > maxAmp){
-    maxAmp = abs(127-ADCH);
+  if (abs(HALF_SAMPLE_VALUE - ADCH) > maxAmp){
+    maxAmp = abs(HALF_SAMPLE_VALUE-ADCH);
   }
   if (ampTimer == 1000){
     ampTimer = 0;
