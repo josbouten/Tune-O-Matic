@@ -102,7 +102,7 @@ void setup() {
   //to see frequency coming up on the serial uncomment the line below and also the serial code right at the bottom of this code page
   Serial.begin(9600);
 
-  cli(); // diable interrupts
+  cli(); // disable interrupts
 
   // set up continuous sampling of analog pin 0
 
