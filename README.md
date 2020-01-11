@@ -1,10 +1,10 @@
 # Tune-O-Matic
 Tuner for analog synths, inspired by Amanda Ghassaei's Instructables and Sam's LookMumNoComputer Videos
 
-This code is an adapter version of the code published by Amanda and Sam. I streamlined the code a bit
-and added some comments. I came across the tune while looking at Sam's video on the 1112 performance 
+This code is an adapted version of the code published by Amanda and Sam. 
+I came across the tuner while looking at Sam's video on the 1112 performance 
 oscillators and responded to his challenge for anyone to look at the code and maybe send him a
-new version.
+new version. I streamlined the code a bit and added some comments. 
 
 Have a look at LOOKMUMNOCOMPUTER's video's on building the 
 1112 performance oscillators here https://www.lookmumnocomputer.com/projects#/1222-performance-vco 
