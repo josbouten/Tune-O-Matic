@@ -1,6 +1,6 @@
 //This code is made using the very good sine wave freq detection by Amanda Ghassaei july 2012
 //https://www.instructables.com/member/amandaghassaei/
-//it is then put into the loop and the LEDS just light up when its there turn.
+//it is then put into the loop and the LEDS just light up when it's their turn.
 
 // Changelog
 // Code origin Sam / LookMumNoComputer and Amanda Ghassaei
@@ -19,7 +19,6 @@
 //this is just a suggestion of what to put on the arduino. you can put anything you want!
 //remember this is made by sam the dumbest coder on the planet.
 //but it works! you cant dispute that haha.
-//this is just a suggestion of what to put on the arduino. you can put anything you want!
 //maybe something that rotates to the frequency? no ones saying you need a tuner haha.
 //if anyone makes a different sketch they think is superior and want to share also definitely share
 //there are a lot of free pins on the nano. maybe you could add a suboctave generator or something!
@@ -67,7 +66,7 @@ int frequency;
 #define HALF_SAMPLE_VALUE 127
 
 // data storage variables
-unsigned int time = 0; // keeps time and sends vales to store in timer[] occasionally
+unsigned int time = 0; // keeps time and sends values to store in timer[] occasionally
 #define BUFFER_SIZE 10
 int timer[BUFFER_SIZE]; // storage for timing of events
 int slope[BUFFER_SIZE]; // storage for slope of events
@@ -76,7 +75,7 @@ byte index = 0; // current storage index
 int maxSlope = 0; // used to calculate max slope as trigger point
 int newSlope; // storage for incoming slope data
 
-// variables for decided whether you have a match
+// variables for deciding whether you have a match
 #define MAX_NO_MATCH_VALUE 9
 byte noMatch = 0; // counts how many non-matches you've received to reset variables if it's been too long
 byte slopeTol = 3; // slope tolerance- adjust this if you need
@@ -272,7 +271,7 @@ void testNote(int tableIndex, String pattern) {
       break; // Exit the loop as soon as there is a match.
     }
   }
-  // If any of the conditions turns out to be true,
+  // If any of the conditions turn out to be true,
   // switch on the corresponding LEDs.
   if (condition == true) setLeds(pattern);
 }
