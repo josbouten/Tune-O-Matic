@@ -4,7 +4,7 @@
 
 // Changelog
 // Code origin Sam / LookMumNoComputer and Amanda Ghassaei
-// 9, 10 Jan 2020: Jos Bouten aka Zaphod B: 
+// 9 Jan 2020: Jos Bouten aka Zaphod B: 
 // - put frequencies in a table and simplified controlling the led display
 // - put strings in flash memory to use less program memory space.
 
@@ -15,18 +15,6 @@
    (at your option) any later version.
 
 */
-
-//this is just a suggestion of what to put on the arduino. you can put anything you want!
-//remember this is made by sam the dumbest coder on the planet.
-//but it works! you cant dispute that haha.
-//this is just a suggestion of what to put on the arduino. you can put anything you want!
-//maybe something that rotates to the frequency? no ones saying you need a tuner haha.
-//if anyone makes a different sketch they think is superior and want to share also definitely share
-//there are a lot of free pins on the nano. maybe you could add a suboctave generator or something!
-//just some ideas
-//it is made to be quite accomadating for analog oscillators, it's probably best to fine track the oscillator
-//with another tuner with more accuracy, this gives a ball park figure for gigs. and it works just fine
-//for that!
 
 //LED OUTPUT PINS
 
@@ -67,18 +55,18 @@ int frequency;
 #define HALF_SAMPLE_VALUE 127
 
 // data storage variables
-unsigned int time = 0; // keeps time and sends vales to store in timer[] occasionally
+unsigned int time = 0;   // keeps time and sends values to store in timer[] occasionally
 #define BUFFER_SIZE 10
-int timer[BUFFER_SIZE]; // storage for timing of events
-int slope[BUFFER_SIZE]; // storage for slope of events
+int timer[BUFFER_SIZE];  // storage for timing of events
+int slope[BUFFER_SIZE];  // storage for slope of events
 unsigned int totalTimer; // used to calculate period
-byte index = 0; // current storage index
+byte index = 0;   // current storage index
 int maxSlope = 0; // used to calculate max slope as trigger point
-int newSlope; // storage for incoming slope data
+int newSlope;     // storage for incoming slope data
 
 // variables for decided whether you have a match
 #define MAX_NO_MATCH_VALUE 9
-byte noMatch = 0; // counts how many non-matches you've received to reset variables if it's been too long
+byte noMatch = 0;  // counts how many non-matches you've received to reset variables if it's been too long
 byte slopeTol = 3; // slope tolerance- adjust this if you need
 int timerTol = 10; // timer tolerance- adjust this if you need
 
@@ -88,56 +76,18 @@ byte maxAmp = 0;
 byte checkMaxAmp;
 byte ampThreshold = 30; // raise if you have a very noisy signal
 
-void setup() {
-  pinMode(LED3, OUTPUT);
-  pinMode(LED4, OUTPUT);
-  pinMode(LED5, OUTPUT);
-
-  pinMode(LEDE, OUTPUT);
-  pinMode(LEDD, OUTPUT);
-  pinMode(LEDC, OUTPUT);
-  pinMode(LEDDP, OUTPUT);
-  pinMode(LEDB, OUTPUT);
-  pinMode(LEDA, OUTPUT);
-  pinMode(LEDF, OUTPUT);
-  pinMode(LEDG, OUTPUT);
-
-
-  //to see frequency coming up on the serial uncomment the line below and also the serial code right at the bottom of this code page
-  Serial.begin(9600);
-
-  cli(); // disable interrupts
-
-  // set up continuous sampling of analog pin 0
-
-  // clear ADCSRA and ADCSRB registers
-  ADCSRA = 0;
-  ADCSRB = 0;
-
-  ADMUX |= (1 << REFS0); //set reference voltage
-  ADMUX |= (1 << ADLAR); //left align the ADC value- so we can read highest 8 bits from ADCH register only
-
-  ADCSRA |= (1 << ADPS2) | (1 << ADPS0); // set ADC clock with 32 prescaler- 16mHz/32=500kHz
-  ADCSRA |= (1 << ADATE); // enabble auto trigger
-  ADCSRA |= (1 << ADIE); // enable interrupts when measurement complete
-  ADCSRA |= (1 << ADEN); // enable ADC
-  ADCSRA |= (1 << ADSC); // start ADC measurements
-
-  sei(); // enable interrupts
-}
-
 ISR(ADC_vect) { // when new ADC value ready 
   PORTB &= B11101111; // set pin 12 low
   prevData = newData; // store previous value
   newData = ADCH; // get value from A0
   if (prevData < HALF_SAMPLE_VALUE && newData >= HALF_SAMPLE_VALUE){ // if increasing and crossing midpoint
     newSlope = newData - prevData; // calculate slope
-    if (abs(newSlope - maxSlope) < slopeTol){//if slopes are ==
-      //record new data and reset time
+    if (abs(newSlope - maxSlope) < slopeTol){ // if slopes are ==
+      // record new data and reset time
       slope[index] = newSlope;
       timer[index] = time;
       time = 0;
-      if (index == 0){ //new max slope just reset
+      if (index == 0){ // new max slope just reset
         PORTB |= B00010000; // set pin 12 high
         noMatch = 0;
         index++; // increment index
@@ -280,87 +230,129 @@ void testNote(int tableIndex, String pattern) {
 void testLedsIndividually() {
   setLeds(F("10000000000"));
   Serial.println(F("1"));
-  delay(1000);
+  delay(100);
   setLeds(F("01000000000"));
-  delay(1000);
+  delay(100);
   setLeds(F("00100000000"));
   Serial.println(F("2"));
-  delay(1000);
+  delay(100);
   setLeds(F("00010000000"));
   Serial.println(F("3"));
-  delay(1000);
+  delay(100);
   setLeds(F("00001000000"));
   Serial.println(F("4"));
-  delay(1000);
+  delay(100);
   setLeds(F("00000100000"));
   Serial.println(F("5"));
-  delay(1000);
+  delay(100);
   setLeds(F("00000010000"));
   Serial.println(F("6"));
-  delay(1000);
+  delay(100);
   setLeds(F("00000001000"));
   Serial.println(F("7"));
-  delay(1000);
+  delay(100);
   setLeds(F("00000000100"));
   Serial.println(F("8"));
-  delay(1000);
+  delay(100);
   setLeds(F("00000000010"));
   Serial.println(F("9"));
-  delay(1000);
+  delay(100);
   setLeds(F("00000000001"));
   Serial.println(F("10"));
-  delay(1000);
+  delay(100);
+  // Clear all leds.
+  setLeds(F("00000000000"));
+  delay(100);
 }
 
 void testMusicalChars() {
-  setLeds(F("01011000110")); // C
+  setLeds(F("00011000110")); // C
   delay(500);
   setLeds(F("00000000000"));
   delay(500);
-  setLeds(F("01011010110")); // C#
+  setLeds(F("00011010110")); // C#
   delay(500);
   setLeds(F("00000000000"));
   delay(500);
-  setLeds(F("01011101001")); // D
+  setLeds(F("00011101001")); // D
   delay(500);
   setLeds(F("00000000000"));
   delay(500);
-  setLeds(F("01011111001")); // D#
+  setLeds(F("00011111001")); // D#
   delay(500);
   setLeds(F("00000000000"));
   delay(500);
-  setLeds(F("01011000111")); // E
+  setLeds(F("00011000111")); // E
   delay(500);
   setLeds(F("00000000000"));
   delay(500);
-  setLeds(F("01010000111")); // F0
+  setLeds(F("00010000111")); // F0
   delay(500);
   setLeds(F("00000000000"));
   delay(500);
-  setLeds(F("01010010111")); // F0#
+  setLeds(F("00010010111")); // F0#
   delay(500);
   setLeds(F("00000000000"));
   delay(500);
-  setLeds(F("01001101111")); // G0
+  setLeds(F("00001101111")); // G0
   delay(500);
   setLeds(F("00000000000"));
   delay(500);
-  setLeds(F("01001111111")); // G0#
+  setLeds(F("00001111111")); // G0#
   delay(500);
   setLeds(F("00000000000"));
   delay(500);
-  setLeds(F("01010101111")); // A0
+  setLeds(F("00010101111")); // A0
   delay(500);
   setLeds(F("00000000000"));
   delay(500);
-  setLeds(F("01010111111")); // A0#
+  setLeds(F("00010111111")); // A0#
   delay(500);
   setLeds(F("00000000000"));
   delay(500);
-  setLeds(F("01011101111")); // B0   
+  setLeds(F("00011101111")); // B0   
   delay(500);
   setLeds(F("00000000000"));
   delay(500);  
+}
+
+void setup() {
+  pinMode(LED3, OUTPUT);
+  pinMode(LED4, OUTPUT);
+  pinMode(LED5, OUTPUT);
+
+  pinMode(LEDE, OUTPUT);
+  pinMode(LEDD, OUTPUT);
+  pinMode(LEDC, OUTPUT);
+  pinMode(LEDDP, OUTPUT);
+  pinMode(LEDB, OUTPUT);
+  pinMode(LEDA, OUTPUT);
+  pinMode(LEDF, OUTPUT);
+  pinMode(LEDG, OUTPUT);
+
+  Serial.begin(9600);
+
+  cli(); // disable interrupts
+
+  // set up continuous sampling of analog pin 0
+
+  // clear ADCSRA and ADCSRB registers
+  ADCSRA = 0;
+  ADCSRB = 0;
+
+  ADMUX |= (1 << REFS0); // set reference voltage
+  ADMUX |= (1 << ADLAR); // left align the ADC value- so we can read highest 8 bits from ADCH register only
+
+  ADCSRA |= (1 << ADPS2) | (1 << ADPS0); // set ADC clock with 32 prescaler- 16mHz / 32 = 500kHz
+  ADCSRA |= (1 << ADATE); // enabble auto trigger
+  ADCSRA |= (1 << ADIE);  // enable interrupts when measurement complete
+  ADCSRA |= (1 << ADEN);  // enable ADC
+  ADCSRA |= (1 << ADSC);  // start ADC measurements
+
+  sei(); // enable interrupts
+  // Run a test of all leds.
+  testLedsIndividually();
+  testLedsIndividually();
 }
 
 #ifdef LED_TEST
@@ -457,9 +449,7 @@ void loop() {
   }
 
   delay(70);
-  
-  // uncomment this and the stuff at the top to see hz in the serial
-  //Serial.print(frequency / 10);
-  //Serial.println(F("Hz"));
+  Serial.print(frequency / 10);
+  Serial.println(F("Hz"));
 }
 #endif
