@@ -1,6 +1,5 @@
-//This code is made using the very good sine wave freq detection by Amanda Ghassaei july 2012
-//https://www.instructables.com/member/amandaghassaei/
-//it is then put into the loop and the LEDS just light up when its there turn.
+// This code is made using the very good sine wave freq detection by Amanda Ghassaei july 2012
+// https://www.instructables.com/member/amandaghassaei/
 
 // Changelog
 // Code origin Sam / LookMumNoComputer and Amanda Ghassaei
@@ -8,6 +7,8 @@
 // - put frequencies in a table and simplified controlling the led display
 // - put strings in flash memory to use less program memory space.
 
+// 18 Jan 2020
+// Added test of clipping led.
 /*
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -16,20 +17,19 @@
 
 */
 
-//LED OUTPUT PINS
-
-
+// LED OUTPUT PINS
 int LED3 = 18;
 int LED4 = 19;
 int LED5 = 17;
 
 // Uncomment the following #define if you want to check the 7-segment display
-// and 3 signalling LEDs.
+// 3 signalling LEDs and clipping LED continuously.
 // Leave it commented out if you want to run the tuner.
+
 //#define LED_TEST
 
 
-// 7 segment display output pins;
+// 9 segment display output pins;
 
 int LEDE = 2;
 int LEDD = 3;
@@ -40,101 +40,111 @@ int LEDA = 8;
 int LEDF = 7;
 int LEDG = 6;
 
+int CLIPPING_LED = 13;
 
-// clipping indicator variables
-boolean clipping = true;
-
-// data storage variables
+// Data storage variables.
 byte newData = 0;
 byte prevData = 0;
 
-// freq variables
+// Freq variables.
 unsigned int period;
 int frequency;
 
 #define HALF_SAMPLE_VALUE 127
+#define TIMER_RATE 38462
+#define TIMER_RATE_10 TIMER_RATE * 10
 
-// data storage variables
-unsigned int time = 0;   // keeps time and sends values to store in timer[] occasionally
+// Data storage variables.
+unsigned int time = 0;   // Keeps time and sends values to store in timer[] occasionally.
 #define BUFFER_SIZE 10
-int timer[BUFFER_SIZE];  // storage for timing of events
-int slope[BUFFER_SIZE];  // storage for slope of events
-unsigned int totalTimer; // used to calculate period
-byte index = 0;   // current storage index
-int maxSlope = 0; // used to calculate max slope as trigger point
-int newSlope;     // storage for incoming slope data
+int timer[BUFFER_SIZE];  // Sstorage for timing of events.
+int slope[BUFFER_SIZE];  // Storage for slope of events.
+unsigned int totalTimer; // Used to calculate period.
+byte index = 0;   // Current storage index.
+int maxSlope = 0; // Used to calculate max slope as trigger point.
+int newSlope;     // Storage for incoming slope data.
 
-// variables for decided whether you have a match
+// Variables for decided whether you have a match.
 #define MAX_NO_MATCH_VALUE 9
-byte noMatch = 0;  // counts how many non-matches you've received to reset variables if it's been too long
-byte slopeTol = 3; // slope tolerance- adjust this if you need
-int timerTol = 10; // timer tolerance- adjust this if you need
+byte noMatch = 0;  // Counts how many non-matches you've received to reset variables if it's been too long.
+byte slopeTol = 3; // Slope tolerance - adjust this if you need.
+int timerTol = 10; // Timer tolerance - adjust this if you need.
 
-// variables for amp detection
+// Variables for amp detection.
 unsigned int ampTimer = 0;
 byte maxAmp = 0;
 byte checkMaxAmp;
-byte ampThreshold = 30; // raise if you have a very noisy signal
+byte ampThreshold = 30; // Raise if you have a very noisy signal.
+long clippingTimer = 0;
 
-ISR(ADC_vect) { // when new ADC value ready 
-  PORTB &= B11101111; // set pin 12 low
-  prevData = newData; // store previous value
-  newData = ADCH; // get value from A0
+// Clipping indicator variables.
+boolean clipping = true;
+#define CLIPPING_TIME 5 * TIMER_RATE // This should amount to 2 seconds.
+
+ISR(ADC_vect) {       // When new ADC value ready.
+  PORTB &= B11101111; // Set pin 12 low.
+  prevData = newData; // Store previous value.
+  newData = ADCH;     // Get value from A0.
   if (prevData < HALF_SAMPLE_VALUE && newData >= HALF_SAMPLE_VALUE){ // if increasing and crossing midpoint
-    newSlope = newData - prevData; // calculate slope
-    if (abs(newSlope - maxSlope) < slopeTol){ // if slopes are ==
-      // record new data and reset time
+    newSlope = newData - prevData; // Calculate slope
+    if (abs(newSlope - maxSlope) < slopeTol){ // If slopes are ==
+      // Record new data and reset time.
       slope[index] = newSlope;
       timer[index] = time;
       time = 0;
-      if (index == 0){ // new max slope just reset
-        PORTB |= B00010000; // set pin 12 high
+      if (index == 0){ // New max slope just reset.
+        PORTB |= B00010000; // Set pin 12 high.
         noMatch = 0;
-        index++; // increment index
+        index++; // Increment index.
       }
       else if (abs(timer[0] - timer[index]) < timerTol && abs(slope[0] - newSlope) < slopeTol){ //if timer duration and slopes match
-        // sum timer values
+        // Sum timer values.
         totalTimer = 0;
         for (byte i = 0; i < index; i++){
           totalTimer += timer[i];
         }
-        period = totalTimer; // set period
-        // reset new zero index values to compare with
+        period = totalTimer; // Set period.
+        // Reset new zero index values to compare with.
         timer[0] = timer[index];
         slope[0] = slope[index];
-        index = 1; // set index to 1
-        PORTB |= B00010000; // set pin 12 high
+        index = 1; // Set index to 1.
+        PORTB |= B00010000; // Set pin 12 high.
         noMatch = 0;
-      }
-      else{ // crossing midpoint but not match
-        index++; // increment index
+      } else { // Crossing midpoint but not match.
+        index++; // Increment index.
         if (index > BUFFER_SIZE - 1){
           reset();
         }
       }
     }
-    else if (newSlope > maxSlope){ // if new slope is much larger than max slope
+    else if (newSlope > maxSlope){ // If new slope is much larger than max slope.
       maxSlope = newSlope;
-      time = 0; // reset clock
+      time = 0; // Reset clock.
       noMatch = 0;
-      index = 0; // reset index
+      index = 0; // Reset index.
     }
-    else{ // slope not steep enough
-      noMatch++; // increment no match counter
+    else { // Slope not steep enough.
+      noMatch++; // Increment no match counter.
       if (noMatch > MAX_NO_MATCH_VALUE){
         reset();
       }
     }
   }
     
-  if (newData == 0 || newData == 1023){ // if clipping
-    PORTB |= B00100000; // set pin 13 high- turn on clipping indicator led
-    clipping = true; // currently clipping
+  if (newData == 0 || newData == 1023){ // If clipping 
+    PORTB |= B00100000; // set pin 13 high, i.e. turn on clipping indicator led.
+    clipping = true; // Currently clipping.
   }
   
-  time++; // increment timer at rate of 38.5kHz
+  time++; // Increment timer at rate of 38.5kHz
+  clippingTimer++;
+  if (clippingTimer > CLIPPING_TIME) {
+    PORTB &= B11011111; // Set pin 13 low, i.e. turn off clipping indicator led.
+    clipping = false;   // Currently not clipping.
+    clippingTimer = 0;
+  }
   
-  ampTimer++; // increment amplitude timer
+  ampTimer++; // Increment amplitude timer.
   if (abs(HALF_SAMPLE_VALUE - ADCH) > maxAmp){
     maxAmp = abs(HALF_SAMPLE_VALUE-ADCH);
   }
@@ -146,10 +156,10 @@ ISR(ADC_vect) { // when new ADC value ready
   
 }
 
-void reset(){   // clear out some variables
-  index = 0;    // reset index
-  noMatch = 0;  // reset match couner
-  maxSlope = 0; // reset slope
+void reset(){   // Clear out some variables.
+  index = 0;    // Reset index.
+  noMatch = 0;  // Reset match counter.
+  maxSlope = 0; // Reset slope.
 }
 
 
@@ -227,93 +237,99 @@ void testNote(int tableIndex, String pattern) {
   if (condition == true) setLeds(pattern);
 }
 
-void testLedsIndividually() {
+void testLedsIndividually(int delayTime) {
   setLeds(F("10000000000"));
   Serial.println(F("1"));
-  delay(100);
+  delay(delayTime);
   setLeds(F("01000000000"));
-  delay(100);
+  delay(delayTime);
   setLeds(F("00100000000"));
   Serial.println(F("2"));
-  delay(100);
+  delay(delayTime);
   setLeds(F("00010000000"));
   Serial.println(F("3"));
-  delay(100);
+  delay(delayTime);
   setLeds(F("00001000000"));
   Serial.println(F("4"));
-  delay(100);
+  delay(delayTime);
   setLeds(F("00000100000"));
   Serial.println(F("5"));
-  delay(100);
+  delay(delayTime);
   setLeds(F("00000010000"));
   Serial.println(F("6"));
-  delay(100);
+  delay(delayTime);
   setLeds(F("00000001000"));
   Serial.println(F("7"));
-  delay(100);
+  delay(delayTime);
   setLeds(F("00000000100"));
   Serial.println(F("8"));
-  delay(100);
+  delay(delayTime);
   setLeds(F("00000000010"));
   Serial.println(F("9"));
-  delay(100);
+  delay(delayTime);
   setLeds(F("00000000001"));
   Serial.println(F("10"));
-  delay(100);
-  // Clear all leds.
+  delay(delayTime);
+  // Clear all leds of 9 segment display.
   setLeds(F("00000000000"));
-  delay(100);
+  delay(delayTime);
+  
+  // Test clipping Led
+  digitalWrite(CLIPPING_LED, HIGH);
+  delay(delayTime);
+  digitalWrite(CLIPPING_LED, LOW);
+  delay(delayTime);
 }
 
-void testMusicalChars() {
+void testMusicalChars(int delayTime) {
   setLeds(F("00011000110")); // C
-  delay(500);
+  delay(delayTime);
   setLeds(F("00000000000"));
-  delay(500);
+  delay(delayTime);
   setLeds(F("00011010110")); // C#
-  delay(500);
+  delay(delayTime);
   setLeds(F("00000000000"));
-  delay(500);
+  delay(delayTime);
   setLeds(F("00011101001")); // D
-  delay(500);
+  delay(delayTime);
   setLeds(F("00000000000"));
-  delay(500);
+  delay(delayTime);
   setLeds(F("00011111001")); // D#
-  delay(500);
+  delay(delayTime);
   setLeds(F("00000000000"));
-  delay(500);
+  delay(delayTime);
   setLeds(F("00011000111")); // E
-  delay(500);
+  delay(delayTime);
   setLeds(F("00000000000"));
-  delay(500);
+  delay(delayTime);
   setLeds(F("00010000111")); // F0
-  delay(500);
+  delay(delayTime);
   setLeds(F("00000000000"));
-  delay(500);
+  delay(delayTime);
   setLeds(F("00010010111")); // F0#
-  delay(500);
+  delay(delayTime);
   setLeds(F("00000000000"));
-  delay(500);
+  delay(delayTime);
   setLeds(F("00001101111")); // G0
-  delay(500);
+  delay(delayTime);
   setLeds(F("00000000000"));
-  delay(500);
+  delay(delayTime);
   setLeds(F("00001111111")); // G0#
-  delay(500);
+  delay(delayTime);
   setLeds(F("00000000000"));
-  delay(500);
+  delay(delayTime);
   setLeds(F("00010101111")); // A0
-  delay(500);
+  delay(delayTime);
   setLeds(F("00000000000"));
-  delay(500);
+  delay(delayTime);
   setLeds(F("00010111111")); // A0#
-  delay(500);
+  delay(delayTime);
   setLeds(F("00000000000"));
-  delay(500);
+  delay(delayTime);
   setLeds(F("00011101111")); // B0   
-  delay(500);
+  delay(delayTime);
   setLeds(F("00000000000"));
-  delay(500);  
+  delay(delayTime);  
 }
 
 void setup() {
@@ -332,38 +348,42 @@ void setup() {
 
   Serial.begin(9600);
 
-  cli(); // disable interrupts
+  cli(); // Disable interrupts.
 
-  // set up continuous sampling of analog pin 0
+  // Set up continuous sampling of analog pin 0.
 
-  // clear ADCSRA and ADCSRB registers
+  // Clear ADCSRA and ADCSRB registers.
   ADCSRA = 0;
   ADCSRB = 0;
 
-  ADMUX |= (1 << REFS0); // set reference voltage
-  ADMUX |= (1 << ADLAR); // left align the ADC value- so we can read highest 8 bits from ADCH register only
+  ADMUX |= (1 << REFS0); // Set reference voltage.
+  ADMUX |= (1 << ADLAR); // Left align the ADC valu e- so we can read highest 8 bits from ADCH register only
 
-  ADCSRA |= (1 << ADPS2) | (1 << ADPS0); // set ADC clock with 32 prescaler- 16mHz / 32 = 500kHz
-  ADCSRA |= (1 << ADATE); // enabble auto trigger
-  ADCSRA |= (1 << ADIE);  // enable interrupts when measurement complete
-  ADCSRA |= (1 << ADEN);  // enable ADC
-  ADCSRA |= (1 << ADSC);  // start ADC measurements
+  ADCSRA |= (1 << ADPS2) | (1 << ADPS0); // Set ADC clock with 32 prescaler -> 16mHz / 32 = 500kHz.
+  ADCSRA |= (1 << ADATE); // Enable auto trigger.
+  ADCSRA |= (1 << ADIE);  // Enable interrupts when measurement complete.
+  ADCSRA |= (1 << ADEN);  // Enable ADC.
+  ADCSRA |= (1 << ADSC);  // Start ADC measurements.
 
-  sei(); // enable interrupts
+  sei(); // Enable interrupts.
   // Run a test of all leds.
-  testLedsIndividually();
-  testLedsIndividually();
+#ifndef LED_TEST
+  testLedsIndividually(50);
+  testMusicalChars(50);
+  testLedsIndividually(50);
+  testMusicalChars(50);
+#endif
 }
 
 #ifdef LED_TEST
 void loop() {  
-  testLedsIndividually();    
-  testMusicalChars();
+  testLedsIndividually(500);
+  testMusicalChars(500);
 }
 #else
 void loop() {
 
-  frequency = 384620 / period; //timer rate with an extra zero/period
+  frequency = TIMER_RATE_10 / period; // Timer rate with an extra zero/period.
 
   if ((frequency > 0) && (frequency < 158)) {
     setLeds(F("00011101110"));
@@ -449,7 +469,7 @@ void loop() {
   }
 
   delay(70);
-  Serial.print(frequency / 10);
-  Serial.println(F("Hz"));
+//  Serial.print(frequency / 10);
+//  Serial.println(F("Hz"));
 }
 #endif
