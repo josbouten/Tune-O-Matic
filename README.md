@@ -14,3 +14,5 @@ When uncommented and uploaded it allows you to check all the leds and the patter
 show the tuning in the display. Once you are sure the leds perform as they should, comment the line,
 recompile and upload the code and you should be set.
 
+The code is usable for a common anode or common cathode led display. 
+Follow the instructions in the code and set LED_DISPLAY_TYPE to the one you use.
