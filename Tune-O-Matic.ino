@@ -2,13 +2,19 @@
 // https://www.instructables.com/member/amandaghassaei/
 
 // Changelog
-// Code origin Sam / LookMumNoComputer and Amanda Ghassaei
+// Code origin Sam / LookMumNoComputer and Amandaghassaei
 // 9 Jan 2020: Jos Bouten aka Zaphod B: 
 // - put frequencies in a table and simplified controlling the led display
 // - put strings in flash memory to use less program memory space.
 
 // 18 Jan 2020
 // Added test of clipping led.
+
+// 29 Febr 2020
+// Added a switch mechanism to the code to make it easy to use either a common anode or common
+// cathode LED-display.
+// Set the const LED_DISPLAY_TYPE to the type of LED display you use (COMMON_ANODE or COMMON_CATHODE).
+
 /*
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -17,16 +23,25 @@
 
 */
 
+const int COMMON_CATHODE = 1;
+const int COMMON_ANODE   = 2;
+//
+// SET YOUR DISPLAY TYPE HERE
+//
+const int LED_DISPLAY_TYPE = COMMON_ANODE;
+
+// Uncomment the following #define if you want to check the 7-segment display
+// 3 signalling LEDs and clipping LED continuously for testing purposes.
+// Leave it commented out if you want to run the tuner.
+
+//#define LED_TEST
+
+// DO NOT CHANGE ANYTHING BELOW THIS LINE
+//-------------------------------------------------------------------------------------------
 // LED OUTPUT PINS
 int LED3 = 18;
 int LED4 = 19;
 int LED5 = 17;
-
-// Uncomment the following #define if you want to check the 7-segment display
-// 3 signalling LEDs and clipping LED continuously.
-// Leave it commented out if you want to run the tuner.
-
-//#define LED_TEST
 
 
 // 9 segment display output pins;
@@ -164,18 +179,32 @@ void reset(){   // Clear out some variables.
 
 
 void setLeds(String segments) {
-  // Decode led pattern and switch on/off the leds.
-  digitalWrite(LED3,  segments[0] ==  '0' ? LOW : HIGH);
-  digitalWrite(LED4,  segments[1] ==  '0' ? LOW : HIGH);
-  digitalWrite(LED5,  segments[2] ==  '0' ? LOW : HIGH);
-  digitalWrite(LEDE,  segments[3] ==  '0' ? LOW : HIGH);
-  digitalWrite(LEDD,  segments[4] ==  '0' ? LOW : HIGH);
-  digitalWrite(LEDC,  segments[5] ==  '0' ? LOW : HIGH);
-  digitalWrite(LEDDP, segments[6] ==  '0' ? LOW : HIGH);
-  digitalWrite(LEDB,  segments[7] ==  '0' ? LOW : HIGH);
-  digitalWrite(LEDA,  segments[8] ==  '0' ? LOW : HIGH);
-  digitalWrite(LEDF,  segments[9] ==  '0' ? LOW : HIGH);
-  digitalWrite(LEDG,  segments[10] == '0' ? LOW : HIGH);
+  if (LED_DISPLAY_TYPE == COMMON_CATHODE) {
+    // Decode led pattern and switch on/off the leds.
+    digitalWrite(LED3,  segments[0] ==  '0' ? LOW : HIGH);
+    digitalWrite(LED4,  segments[1] ==  '0' ? LOW : HIGH);
+    digitalWrite(LED5,  segments[2] ==  '0' ? LOW : HIGH);
+    digitalWrite(LEDE,  segments[3] ==  '0' ? LOW : HIGH);
+    digitalWrite(LEDD,  segments[4] ==  '0' ? LOW : HIGH);
+    digitalWrite(LEDC,  segments[5] ==  '0' ? LOW : HIGH);
+    digitalWrite(LEDDP, segments[6] ==  '0' ? LOW : HIGH);
+    digitalWrite(LEDB,  segments[7] ==  '0' ? LOW : HIGH);
+    digitalWrite(LEDA,  segments[8] ==  '0' ? LOW : HIGH);
+    digitalWrite(LEDF,  segments[9] ==  '0' ? LOW : HIGH);
+    digitalWrite(LEDG,  segments[10] == '0' ? LOW : HIGH);
+  } else {
+    digitalWrite(LED3,  segments[0] ==  '1' ? LOW : HIGH);
+    digitalWrite(LED4,  segments[1] ==  '1' ? LOW : HIGH);
+    digitalWrite(LED5,  segments[2] ==  '1' ? LOW : HIGH);
+    digitalWrite(LEDE,  segments[3] ==  '1' ? LOW : HIGH);
+    digitalWrite(LEDD,  segments[4] ==  '1' ? LOW : HIGH);
+    digitalWrite(LEDC,  segments[5] ==  '1' ? LOW : HIGH);
+    digitalWrite(LEDDP, segments[6] ==  '1' ? LOW : HIGH);
+    digitalWrite(LEDB,  segments[7] ==  '1' ? LOW : HIGH);
+    digitalWrite(LEDA,  segments[8] ==  '1' ? LOW : HIGH);
+    digitalWrite(LEDF,  segments[9] ==  '1' ? LOW : HIGH);
+    digitalWrite(LEDG,  segments[10] == '1' ? LOW : HIGH);
+  }
 }
 
 #define NR_COLUMNS 14
