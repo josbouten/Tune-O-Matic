@@ -39,13 +39,11 @@ const int LED_DISPLAY_TYPE = COMMON_ANODE;
 // DO NOT CHANGE ANYTHING BELOW THIS LINE
 //-------------------------------------------------------------------------------------------
 // LED OUTPUT PINS
-int LED3 = 18;
-int LED4 = 19;
-int LED5 = 17;
-
+int LED3 = 18;  // A4 (low)
+int LED4 = 19;  // A5 (ok)
+int LED5 = 17;  // A3 (high)
 
 // 9 segment display output pins;
-
 int LEDE = 2;
 int LEDD = 3;
 int LEDC = 4;
@@ -181,9 +179,9 @@ void reset(){   // Clear out some variables.
 void setLeds(String segments) {
   if (LED_DISPLAY_TYPE == COMMON_CATHODE) {
     // Decode led pattern and switch on/off the leds.
-    digitalWrite(LED3,  segments[0] ==  '0' ? LOW : HIGH);
-    digitalWrite(LED4,  segments[1] ==  '0' ? LOW : HIGH);
-    digitalWrite(LED5,  segments[2] ==  '0' ? LOW : HIGH);
+    digitalWrite(LED3,  segments[0] ==  '0' ? LOW : HIGH);  // low
+    digitalWrite(LED4,  segments[1] ==  '0' ? LOW : HIGH);  // ok
+    digitalWrite(LED5,  segments[2] ==  '0' ? LOW : HIGH);  // high
     digitalWrite(LEDE,  segments[3] ==  '0' ? LOW : HIGH);
     digitalWrite(LEDD,  segments[4] ==  '0' ? LOW : HIGH);
     digitalWrite(LEDC,  segments[5] ==  '0' ? LOW : HIGH);
@@ -193,9 +191,9 @@ void setLeds(String segments) {
     digitalWrite(LEDF,  segments[9] ==  '0' ? LOW : HIGH);
     digitalWrite(LEDG,  segments[10] == '0' ? LOW : HIGH);
   } else {
-    digitalWrite(LED3,  segments[0] ==  '1' ? LOW : HIGH);
-    digitalWrite(LED4,  segments[1] ==  '1' ? LOW : HIGH);
-    digitalWrite(LED5,  segments[2] ==  '1' ? LOW : HIGH);
+    digitalWrite(LED3,  segments[0] ==  '1' ? LOW : HIGH);  // low
+    digitalWrite(LED4,  segments[1] ==  '1' ? LOW : HIGH);  // ok
+    digitalWrite(LED5,  segments[2] ==  '1' ? LOW : HIGH);  // high
     digitalWrite(LEDE,  segments[3] ==  '1' ? LOW : HIGH);
     digitalWrite(LEDD,  segments[4] ==  '1' ? LOW : HIGH);
     digitalWrite(LEDC,  segments[5] ==  '1' ? LOW : HIGH);
@@ -365,9 +363,9 @@ void testMusicalChars(int delayTime) {
 }
 
 void setup() {
-  pinMode(LED3, OUTPUT);
-  pinMode(LED4, OUTPUT);
-  pinMode(LED5, OUTPUT);
+  pinMode(LED3, OUTPUT);  // low
+  pinMode(LED4, OUTPUT);  // ok
+  pinMode(LED5, OUTPUT);  // high
 
   pinMode(LEDE, OUTPUT);
   pinMode(LEDD, OUTPUT);
@@ -417,78 +415,180 @@ void loop() {
 
   frequency = TIMER_RATE_10 / period; // Timer rate with an extra zero/period.
 
+
+/*
+ * Seven-Segment Display: segment names
+ *    A
+ *  F   B
+ *    G
+ *  E   C
+ *    D   dp
+ */
+
   if ((frequency > 0) && (frequency < 158)) {
+    /*
+     *    --
+     *  |    |
+     *     
+     *  |    |
+     *    --
+     */
+    //         lohEDC.BAFG
     setLeds(F("00011101110"));
   }
 
   // C
-
+  /*
+   *    --
+   *  |  
+   *     
+   *  | 
+   *    --
+   */
+  //              lohEDC.BAFG
   testNote( 0, F("10011000110"));
   testNote( 1, F("01011000110"));
   testNote( 2, F("00111000110"));
 
   // C#
-
+  /*
+   *    --
+   *  |  
+   *     
+   *  | 
+   *    --   *
+   */
+  //              lohEDC.BAFG
   testNote( 3, F("10011010110"));
   testNote( 4, F("01011010110"));
   testNote( 5, F("00111010110"));
 
   // D
-  
+  /*
+   *    
+   *       |
+   *    --
+   *  |    |
+   *    --
+   */
+  //              lohEDC.BAFG
   testNote( 6, F("10011101001"));
   testNote( 7, F("01011101001"));
   testNote( 8, F("00111101001"));
 
   // D#
-
+  /*
+   *    
+   *       |
+   *    --
+   *  |    |
+   *    --   *
+   */
+  //              lohEDC.BAFG
   testNote( 9, F("10011111001"));
   testNote(10, F("01011111001"));
   testNote(11, F("00111111001"));
 
   // E
-
+  /*
+   *    --
+   *  |     
+   *    --
+   *  |     
+   *    --   
+   */
+  //              lohEDC.BAFG
   testNote(12, F("10011000111"));
   testNote(13, F("01011000111"));
   testNote(14, F("00111000111"));
 
-  // F0
-
+  // F
+  /*
+   *    --
+   *  |     
+   *    --
+   *  |     
+   *         
+   */
+  //              lohEDC.BAFG
   testNote(15, F("10010000111"));
   testNote(16, F("01010000111"));
   testNote(17, F("00110000111"));
 
-  // F#0
-
+  // F#
+  /*
+   *    --
+   *  |     
+   *    --
+   *  |     
+   *         *
+   */
+  //              lohEDC.BAFG
   testNote(18, F("10010010111"));
   testNote(19, F("01010010111"));
   testNote(20, F("00110010111"));
 
-  // G0
-
+  // G
+  /*
+   *    --
+   *  |    |
+   *    --
+   *       |
+   *    --   
+   */
+  //              lohEDC.BAFG
   testNote(21, F("10001101111"));
   testNote(22, F("01001101111"));
   testNote(23, F("00101101111"));
 
-  // G#0
-
+  // G#
+  /*
+   *    --
+   *  |    |
+   *    --
+   *       |
+   *    --   *
+   */
+  //              lohEDC.BAFG
   testNote(24, F("10001111111"));
   testNote(25, F("01001111111"));
   testNote(26, F("00101111111"));
 
-  // A0
-
+  // A
+  /*
+   *    --
+   *  |    |
+   *    --
+   *  |    |
+   *         
+   */
+  //              lohEDC.BAFG
   testNote(27, F("10010101111"));
   testNote(28, F("01010101111"));
   testNote(29, F("00110101111"));
 
-  // A#0
-
+  // A#
+  /*
+   *    --
+   *  |    |
+   *    --
+   *  |    |
+   *    --   *
+   */
+  //              lohEDC.BAFG
   testNote(30, F("10011111111"));
   testNote(31, F("01011111111"));
   testNote(32, F("00111111111"));
 
-  // B0
-
+  // B
+  /*
+   *    --
+   *  |    |
+   *    --
+   *  |    |
+   *    --  
+   */
+  //              lohEDC.BAFG
   testNote(33, F("10011101111"));
   testNote(34, F("01011101111"));
   testNote(35, F("00111101111"));
@@ -497,6 +597,14 @@ void loop() {
 
   if ((frequency > 10180) && (frequency < 100000))
   {
+    /*
+     *      
+     *        
+     *      
+     *        
+     *         *
+     */
+    //         lohEDC.BAFG
     setLeds(F("00000010000"));
   }
 
