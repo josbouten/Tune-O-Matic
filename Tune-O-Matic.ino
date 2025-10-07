@@ -21,6 +21,8 @@
 // Added an option to use a LED to show clipping or signal strength.
 // Got rid of some compiler warnings.
 
+// Oct 2025, removed code for Amp detection. No idea what it was good for.
+
 /*
 
    This program is free software; you can redistribute it and/or modify
@@ -110,22 +112,21 @@ int newSlope;     // Storage for incoming slope data.
 
 // Variables for deciding whether you have a match.
 #define MAX_NO_MATCH_VALUE 9
-int noMatch =   0; // Counts how many non-matches you've received to reset variables if it's been too long.
-int slopeTol =  3; // Slope tolerance - adjust this if you need.
-int timerTol = 10; // Timer tolerance - adjust this if you need.
+int noMatch =    0; // Counts how many non-matches you've received to reset variables if it's been too long.
+int slopeTol = 100; // Slope tolerance - adjust this if you need.    *** 100 required here for dealing with square-ish signals ***
+int timerTol =  10; // Timer tolerance - adjust this if you need.
 
-// Variables for amp detection.
-int ampTimer = 0;
-int maxAmp = 0;
-int checkMaxAmp;
 long clippingTimer = 0;
 
 // Clipping indicator variables.
 boolean clipping = true;
 #define CLIPPING_TIME 5 * TIMER_RATE // This should amount to 2 seconds.
 
+#define write_pin12_low  PORTB &= B11101111
+#define write_pin12_high PORTB |= B00010000
+  
 ISR(ADC_vect) {       // When new ADC value ready.
-  PORTB &= B11101111; // Set pin 12 low.
+  write_pin12_low; // Set pin 12 low.
   prevData = newData; // Store previous value.
   newData = ADCH;     // Get value from A0.
   if (prevData < HALF_SAMPLE_VALUE && newData >= HALF_SAMPLE_VALUE){ // If increasing and crossing midpoint
@@ -136,7 +137,7 @@ ISR(ADC_vect) {       // When new ADC value ready.
       timer[index] = time;
       time = 0;
       if (index == 0){      // New max slope just reset.
-        PORTB |= B00010000; // Set pin 12 high.
+        write_pin12_high; // Set pin 12 high.
         noMatch = 0;
         index++;            // Increment index.
       }
@@ -152,7 +153,7 @@ ISR(ADC_vect) {       // When new ADC value ready.
           timer[0] = timer[index];
           slope[0] = slope[index];
           index = 1; // Set index to 1.
-          PORTB |= B00010000; // Set pin 12 high.
+          write_pin12_high; // Set pin 12 high.
           noMatch = 0;
         } else { // Crossing midpoint but not match.
           index++; // Increment index.
@@ -195,17 +196,6 @@ ISR(ADC_vect) {       // When new ADC value ready.
     #endif
     clipping = false;   // Currently not clipping.
     clippingTimer = 0;
-  }
-  
-  
-  ampTimer++; // Increment amplitude timer.
-  if (abs(HALF_SAMPLE_VALUE - ADCH) > maxAmp){
-    maxAmp = abs(HALF_SAMPLE_VALUE-ADCH);
-  }
-  if (ampTimer == 1000){
-    ampTimer = 0;
-    checkMaxAmp = maxAmp;
-    maxAmp = 0;
   }
   
 }
@@ -452,7 +442,7 @@ void setup() {
   ADCSRB = 0;
 
   ADMUX |= (1 << REFS0); // Set reference voltage.
-  ADMUX |= (1 << ADLAR); // Left align the ADC valu e- so we can read highest 8 bits from ADCH register only
+  ADMUX |= (1 << ADLAR); // Left align the ADC value - so we can read highest 8 bits from ADCH register only
 
   ADCSRA |= (1 << ADPS2) | (1 << ADPS0); // Set ADC clock with 32 prescaler -> 16mHz / 32 = 500kHz.
   ADCSRA |= (1 << ADATE); // Enable auto trigger.
